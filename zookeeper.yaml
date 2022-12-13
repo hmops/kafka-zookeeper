@@ -1,0 +1,81 @@
+---
+- name: install zookeeper
+  hosts: localhost
+  tasks:
+    - name: install jre
+      become: true
+      ansible.builtin.apt:
+        name: default-jre
+        update_cache: yes
+    
+    - name: install jdk
+      become: true
+      ansible.builtin.apt:
+        name: default-jdk
+        update_cache: yes
+    
+    - name: add zookeeper user
+      become: true
+      ansible.builtin.user:
+        name: zookeeper
+        create_home: true
+        shell: /usr/sbin/nologin
+    
+    - name: get zookeeper
+      become: true
+      ansible.builtin.get_url:
+        url: https://dlcdn.apache.org/zookeeper/zookeeper-3.6.3/apache-zookeeper-3.6.3-bin.tar.gz
+        dest: /opt/apache-zookeeper-3.6.3-bin.tar.gz
+
+    - name: extract tar.gz file
+      ansible.builtin.unarchive:
+        src: /opt/apache-zookeeper-3.6.3-bin.tar.gz
+        dest: /opt/apache-zookeeper-3.6.3-bin
+
+    - name: update clientPort
+      ansible.builtin.lineinfile:
+        path: /opt/apache-zookeeper-3.6.3-bin/conf/zoo.cfg
+        regexp: '^clientPort*'
+        line: clientPort=2182
+
+    - name: replace/add zookeeperservers
+      ansible.builtin.lineinfile:
+        path: /opt/apache-zookeeper-3.6.3-bin/conf/zoo.cfg
+        regexp: '^server.1='
+        line: server.1={{ zookeeper_ips }}:2888:3888
+
+    - name: replace dataDir value
+      ansible.builtin.lineinfile:
+        path: /opt/apache-zookeeper-3.6.3-bin/conf/zoo.cfg
+        regexp: '^dataDir*'
+        line: dataDir={{ zookeeper_data_dir }}
+
+    - name: create zookeeper.service
+      ansible.builtin.template:
+        src: zookeeper.service
+        dest: /lib/systemd/system/zookeeper.service
+
+    - name: change modes
+      ansible.builtin.file:
+        path: /opt/apache-zookeeper-3.6.3-bi
+        state: directory
+        recurse: true
+        owner: zookeeper
+        group: zookeeper
+    
+    - name: create zookeeper dataDir
+      ansible.builtin.file:
+        path: "{{ zookeeper_data_dirs }}"
+        state: directory
+        owner: zookeeper
+        group: zookeeper
+    
+    - name: Just force systemd to reread configs
+      ansible.builtin.systemd:
+        daemon_reload: yes
+    
+    - name: enable zookeeper service
+      ansible.builtin.systemd:
+        enabled: true
+        state: started
+        name: zookeeper

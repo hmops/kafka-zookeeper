@@ -48,7 +48,7 @@
       ansible.builtin.lineinfile:
         path: /opt/apache-zookeeper-3.6.3-bin/conf/zoo.cfg
         regexp: '^clientPort*'
-        line: clientPort=2182
+        line: clientPort=2181
     - name: replace/add zookeeperservers
       ansible.builtin.lineinfile:
         path: /opt/apache-zookeeper-3.6.3-bin/conf/zoo.cfg

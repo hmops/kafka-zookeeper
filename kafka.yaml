@@ -27,11 +27,42 @@
         regexp: '^broker.id'
         line: broker.id=1
 
-    - name: update advertised.host.name
+    # - name: update advertised.host.name
+    #   ansible.builtin.lineinfile:
+    #     path: /opt/kafka_2.13-3.3.1/config/server.properties
+    #     regexp: '^advertised.host.name'
+    #     line: advertised.host.name={{ hostname }}
+#####################
+    - name: update listeners
       ansible.builtin.lineinfile:
         path: /opt/kafka_2.13-3.3.1/config/server.properties
-        regexp: '^advertised.host.name'
-        line: advertised.host.name={{ hostname }}
+        regexp: '^listeners'
+        line: listeners=PLAINTEXT://{{ hostname }}:9092
+
+    - name: update num.partitions
+      ansible.builtin.lineinfile:
+        path: /opt/kafka_2.13-3.3.1/config/server.properties
+        regexp: '^num.partitions'
+        line: num.partitions=3
+
+    - name: update offsets.topic.replication.factor
+      ansible.builtin.lineinfile:
+        path: /opt/kafka_2.13-3.3.1/config/server.properties
+        regexp: '^offsets.topic.replication.factor'
+        line: offsets.topic.replication.factor=3
+
+    - name: update transaction.state.log.replication.factor
+      ansible.builtin.lineinfile:
+        path: /opt/kafka_2.13-3.3.1/config/server.properties
+        regexp: '^transaction.state.log.replication.factor'
+        line: transaction.state.log.replication.factor=3
+
+    - name: update transaction.state.log.min.isr
+      ansible.builtin.lineinfile:
+        path: /opt/kafka_2.13-3.3.1/config/server.properties
+        regexp: '^transaction.state.log.min.isr'
+        line: transaction.state.log.min.isr=3
+######
 
     - name: update advertised.listeners
       ansible.builtin.lineinfile:

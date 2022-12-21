@@ -1,48 +1,69 @@
 ---
 - name: install zookeeper
-  hosts: localhost
+  hosts: all
   tasks:
     - name: install jre
       become: true
       ansible.builtin.apt:
         name: default-jre
         update_cache: yes
-    
+
     - name: install jdk
       become: true
       ansible.builtin.apt:
         name: default-jdk
         update_cache: yes
-    
+
     - name: add zookeeper user
       become: true
       ansible.builtin.user:
         name: zookeeper
         create_home: true
         shell: /usr/sbin/nologin
-    
+
     - name: get zookeeper
       become: true
       ansible.builtin.get_url:
         url: https://dlcdn.apache.org/zookeeper/zookeeper-3.6.3/apache-zookeeper-3.6.3-bin.tar.gz
         dest: /opt/apache-zookeeper-3.6.3-bin.tar.gz
-
+    - name: create dir for zookeeper
+      ansible.builtin.file:
+        path: /opt/apache-zookeeper-3.6.3-bin
+        state: directory
+        recurse: true
+        owner: zookeeper
+        group: zookeeper
     - name: extract tar.gz file
       ansible.builtin.unarchive:
+        remote_src: true
         src: /opt/apache-zookeeper-3.6.3-bin.tar.gz
-        dest: /opt/apache-zookeeper-3.6.3-bin
+        dest: /opt/
+    - name: copy
+      ansible.builtin.copy:
+        src: /opt/apache-zookeeper-3.6.3-bin/conf/zoo_sample.cfg
+        dest: /opt/apache-zookeeper-3.6.3-bin/conf/zoo.cfg
+        remote_src: true
 
     - name: update clientPort
       ansible.builtin.lineinfile:
         path: /opt/apache-zookeeper-3.6.3-bin/conf/zoo.cfg
         regexp: '^clientPort*'
         line: clientPort=2182
-
     - name: replace/add zookeeperservers
       ansible.builtin.lineinfile:
         path: /opt/apache-zookeeper-3.6.3-bin/conf/zoo.cfg
         regexp: '^server.1='
-        line: server.1={{ zookeeper_ips }}:2888:3888
+        line: server.1={{ zookeeper_ip_1 }}:2888:3888
+    - name: replace/add zookeeperservers
+      ansible.builtin.lineinfile:
+        path: /opt/apache-zookeeper-3.6.3-bin/conf/zoo.cfg
+        regexp: '^server.2='
+        line: server.2={{ zookeeper_ip_2 }}:2888:3888
+    - name: replace/add zookeeperservers
+      ansible.builtin.lineinfile:
+        path: /opt/apache-zookeeper-3.6.3-bin/conf/zoo.cfg
+        regexp: '^server.3='
+        line: server.3={{ zookeeper_ip_3 }}:2888:3888
 
     - name: replace dataDir value
       ansible.builtin.lineinfile:
@@ -52,28 +73,30 @@
 
     - name: create zookeeper.service
       ansible.builtin.template:
+        # remote_src: true
         src: zookeeper.service
         dest: /lib/systemd/system/zookeeper.service
 
     - name: change modes
       ansible.builtin.file:
-        path: /opt/apache-zookeeper-3.6.3-bi
+        path: /opt/apache-zookeeper-3.6.3-bin
         state: directory
         recurse: true
         owner: zookeeper
         group: zookeeper
-    
+
     - name: create zookeeper dataDir
       ansible.builtin.file:
-        path: "{{ zookeeper_data_dirs }}"
+
+        path: "{{ zookeeper_data_dir }}"
         state: directory
         owner: zookeeper
         group: zookeeper
-    
+
     - name: Just force systemd to reread configs
       ansible.builtin.systemd:
         daemon_reload: yes
-    
+
     - name: enable zookeeper service
       ansible.builtin.systemd:
         enabled: true

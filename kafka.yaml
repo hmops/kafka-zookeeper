@@ -1,6 +1,6 @@
 ---
 - name: install kafka
-  hosts: localhost
+  hosts: all
   tasks:
     - name: add kafka user
       become: true
